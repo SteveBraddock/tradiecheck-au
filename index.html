@@ -84,25 +84,53 @@
       <div class="capture">
         <div class="label">Be the first to know when we launch</div>
         <form class="row" id="notify" onsubmit="return false;">
-          <input type="email" id="email" placeholder="your@email.com.au" aria-label="Email address" required>
+          <input type="email" id="email" name="email" placeholder="your@email.com.au" aria-label="Email address" required>
           <button type="submit" id="btn">Notify me</button>
         </form>
-        <div class="fineprint">Homeowner or tradie &mdash; we&rsquo;ll let you know the moment we&rsquo;re live.</div>
+        <div class="fineprint">Homeowner or tradie &ndash; we&rsquo;ll let you know the moment we&rsquo;re live.</div>
         <div class="msg" id="msg">Thanks &mdash; we&rsquo;ll be in touch at launch.</div>
       </div>
     </div>
     <div class="foot">TradieCheck Limited</div>
   </main>
 <script>
-  document.getElementById('notify').addEventListener('submit',function(){
-    var e=document.getElementById('email');
-    if(!e.value || e.value.indexOf('@')<1){e.focus();return;}
-    // TODO: wire this to a destination (Supabase table, form endpoint, or marketing list).
-    document.getElementById('notify').style.display='none';
-    document.querySelector('.capture .label').style.display='none';
-    document.querySelector('.fineprint').style.display='none';
-    document.getElementById('msg').style.display='block';
+(function(){
+  var ENDPOINT='https://formspree.io/f/mlgybrqg';
+  var COUNTRY='AU';
+  var form=document.getElementById('notify');
+  var email=document.getElementById('email');
+  var btn=document.getElementById('btn');
+  var msg=document.getElementById('msg');
+  var label=document.querySelector('.capture .label');
+  var fine=document.querySelector('.fineprint');
+  function show(t,ok){ msg.textContent=t; msg.style.color=ok?'':'#FF8A8A'; msg.style.display='block'; }
+  form.addEventListener('submit',function(ev){
+    ev.preventDefault();
+    if(!email.value || email.value.indexOf('@')<1){ email.focus(); return; }
+    var orig=btn.textContent; btn.disabled=true; btn.textContent='Sending\u2026';
+    var data=new FormData();
+    data.append('email', email.value);
+    data.append('country', COUNTRY);
+    data.append('source', location.hostname + location.pathname);
+    data.append('_subject', 'New TradieCheck ' + COUNTRY + ' launch signup');
+    fetch(ENDPOINT, { method:'POST', body:data, headers:{'Accept':'application/json'} })
+      .then(function(res){
+        if(res.ok){
+          form.style.display='none';
+          if(label) label.style.display='none';
+          if(fine) fine.style.display='none';
+          show('Thanks \u2013 we\u2019ll let you know the moment we\u2019re live.', true);
+        } else {
+          btn.disabled=false; btn.textContent=orig;
+          show('Something went wrong. Please try again.', false);
+        }
+      })
+      .catch(function(){
+        btn.disabled=false; btn.textContent=orig;
+        show('Network error. Please try again.', false);
+      });
   });
+})();
 </script>
 </body>
 </html>
